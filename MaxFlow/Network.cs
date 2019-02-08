@@ -22,14 +22,14 @@ namespace MaxFlow
 
             private string _name;
             private List<Arc> _arcs;
-            private int _flowFromNodes;               //sucet tokov prichadzajucich do uzla
-            private int _flowToNodes;                 //sucet tokov odchadzajucich z uzla
+            private int _flowFromNodes;               //sum of incoming flow
+            private int _flowToNodes;                 //sum of outcoming flow
 
             #endregion attributes
 
             #region constructors
 
-            //vytvori nepomenovany uzol bez susedov
+            //not named node without neighbours
             public Node()       
             {
                 _name = "";
@@ -38,7 +38,7 @@ namespace MaxFlow
                 _flowToNodes = 0;
             }
 
-            //vytvori pomenovany uzol bez susedov
+            //named node without neighbours
             public Node(string name)
             {
                 _name = name;
@@ -50,6 +50,7 @@ namespace MaxFlow
             #endregion constructors
 
             #region getters&setters
+
             public void SetName(string name)
             {
                 _name = name;
@@ -90,27 +91,24 @@ namespace MaxFlow
             #endregion getters&setters
 
             #region methods
-            //prida hranu medzi aktualnym uzlom a endNode s kapacitou capacity
+
             public void AddArc(Node endNode, int capacity)
             {
                 _arcs.Add(new Arc(this, endNode, capacity));   
             }
 
-            //prida hranu medzi aktualnym uzlom a endNode s kapacitou capacity a velkostou toku flow
             public void AddArc(Node endNode, int capacity, int flow)
             {
                 _arcs.Add(new Arc(this, endNode, capacity, flow));
 
-                //potrebujeme upravit toky kvoli kirchoffovemu zakonu
+                //update the flow due to Kirchoff's law
                 UpdateFlows(this, endNode, flow);
             }
 
-            //aktualizacia tokov - kirchoffov zakon
+            //update flows in the network - kirchoffs law
             public void UpdateFlows(Node startNode, Node endNode, int flow)
             {
-                //aktualizovat velkost pritoku do koncoveho uzla
                 endNode.SetFlowFromNodes(GetFlowFromNodes() + flow);
-                //aktualizovat velkost odtoku zo startovacieho uzla
                 startNode.SetFlowToNodes(GetFlowToNodes() + flow);
             }
 
@@ -131,17 +129,14 @@ namespace MaxFlow
             #endregion attributes
 
             #region constructors
-            //constructor
-
-            //vytvori hranu medzi vrcholmi startNode a endNode s kapacitou capacity
+            
             public Arc(Node startNode, Node endNode, int capacity)
             {
                 SetStartNode(startNode);
                 SetEndNode(endNode);
                 SetCapacity(capacity);
             }
-
-            //vytvori hranu medzi vrcholmi startNode a endNode s kapacitou, tokom
+            
             public Arc(Node startNode, Node endNode, int capacity, int flow)
             {
                 SetStartNode(startNode);
@@ -223,7 +218,6 @@ namespace MaxFlow
 
         #region network constructors
 
-        //vytvori vybrany typ siete, siet je prazdna
         public Network(NetworkType networkType)
         {
             SetNetworkType(networkType);
@@ -303,7 +297,7 @@ namespace MaxFlow
             return _nodes.Count();
         }
 
-        //overi platnost kirchoffovho zakona (z kazdeho uzla priteka a odteka rovnake mnozstvo)
+        //the incoming flow must equal outcoming flow
         public bool CheckKirchoffsLaw()
         {
             foreach(var n in _nodes)
@@ -317,7 +311,7 @@ namespace MaxFlow
             return true;
         }
 
-        //scita vsetky prichadzajuce, odchadzajuce toky vo vrchole
+        //sum of incoming and outcoming flows
         public Tuple<int, int> CountFlowInNode(Node node)
         {
             int sumIn = 0, sumOut = 0;
@@ -335,7 +329,6 @@ namespace MaxFlow
             return Tuple.Create(sumIn, sumOut);
         }
 
-        //scita odtok v zdroji
         public int FlowOutOfSource(Node source)
         {
             int sum = 0;
@@ -348,8 +341,7 @@ namespace MaxFlow
             }
             return sum;
         }
-
-        //scita pritok v stoku
+        
         public int FlowToTarget(Node target)
         {
             int sum = 0;
@@ -363,12 +355,11 @@ namespace MaxFlow
             return sum;
         }
         
-        //vytvori maticu susednosti
         public int[,] AdjacencyMatrix()
         {
             int[,] matrix = new int[NodeCount(), NodeCount()];
 
-            //inicializacia matice na 0
+            //init
             for (int i = 0; i < NodeCount(); i++)
             {
                 for (int j = 0; j < NodeCount(); j++)
@@ -377,7 +368,7 @@ namespace MaxFlow
                 }
             }
 
-            //ak medzi vrcholmi i,j existuje cesta s tokom na hrane, tak matrix[i,j] bude obsahovat velkost toku
+            //if there exist a path between i,j nodes with flow, then matrix[i,j] will contain the amount of flow
             for(int i = 0; i < NodeCount(); i++)
             {
                 Node actualNode = _nodes[i];
@@ -400,35 +391,35 @@ namespace MaxFlow
         public void BuildNetworkFromPictureBox(LinkedList<PictureBoxComponents.Node> pictureBoxNodes, LinkedList<PictureBoxComponents.Arc> pictureBoxArcs)
         {
             Dictionary<PictureBoxComponents.Node, Node> pairsOfNodes = new Dictionary<PictureBoxComponents.Node, Node>();
-            //rozparsujeme uzly do siete
+            //parse the nodes in the network
             foreach(var node in pictureBoxNodes)
             {
                 Node newNode = new Node();
                 _nodes.Add(newNode);
 
-                //tento uzol je source
+                //source
                 if (node.GetColor().Equals(Color.Teal))
                 {
                     _source = newNode;
                 }
 
-                //tento uzol je target
+                //target
                 if (node.GetColor().Equals(Color.Maroon))
                 {
                     _target = newNode;
                 }
 
-                //vytvorim usporiadanu dvojicu <pictureboxnode, networknode>
+                //creates pair <pictureboxnode, networknode>
                 pairsOfNodes[node] = newNode;
             }
 
-            //rozparsujeme hrany do siete
+            //parse the edges in the network
             foreach(var arc in pictureBoxArcs)
             {
                 Node startNode = new Node();
                 Node endNode = new Node();
 
-                //zistime ktore uzly su pociatocny a koncovy
+                //finds the starting node and ending node
                 foreach(var node in pictureBoxNodes)
                 {
                     if (arc.GetStartNode().Equals(node))
@@ -444,12 +435,11 @@ namespace MaxFlow
                 _arcs.Add(new Arc(startNode, endNode, arc.GetCapacity()));
             }
 
-            //zadame hrany uzlom v sieti
+            //set edges to nodes
             foreach(var arc in _arcs)
             {
                 foreach(var node in _nodes)
                 {
-                    //ak sme nasli medzi uzlami rovnaky aky ma pociatocny, tak pridame uzlu hranu vychadzajucu z neho
                     if (arc.GetStartNode().Equals(node))
                     {
                         node.AddArc(arc.GetEndNode(), arc.GetCapacity());

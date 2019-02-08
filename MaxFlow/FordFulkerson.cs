@@ -8,7 +8,7 @@ namespace MaxFlow
 {
     class FordFulkerson
     {
-        //priradi uzlom indexy, obsahuje usporiadane dvojice (x,y), x patri do uzlov, y je indexova mnozina
+        //creates pairs of nodes
         public static Dictionary<Network.Node, int> IndexNodes(Network network)
         {
             Dictionary<Network.Node, int> indexesOfNodes = new Dictionary<Network.Node, int>();
@@ -33,31 +33,28 @@ namespace MaxFlow
             return indexes[network.GetTarget()];
         }
 
-        //zisti ci existuje s-t cesta v rezidualnom grafe
+        //finds if there exists source-target path
         public bool BFS(Network network, int[,] residualGraph, int[] parent)
         {
-            //zoznam navstivenych vrcholov
             bool[] visited = new bool[network.NodeCount()];
 
             for(int i = 0; i < visited.Length; i++)
             {
                 visited[i] = false;
             }
-
-            //najdenie indexov source a target
+    
+            //find source and target
             int indexSource = AssignSourceIndex(network);
             int indexTarget = AssignTargetIndex(network);
             
-            //fronta pre BFS
             Queue<int> q = new Queue<int>();
             q.Enqueue(indexSource);
             parent[indexSource] = -1;
             visited[indexSource] = true;
 
-            //klasicke BFS
+            //bfs algorhitm
             while(q.Count != 0)
             {
-                //prvy prvok vo fronte -> u
                 int u = q.Dequeue();
 
                 for(int v = 0; v < visited.Length; v++)
@@ -75,7 +72,7 @@ namespace MaxFlow
             return visited[indexTarget] == true;
         }
 
-        //vyberie min hodnotu v O(1) z binarnej min haldy (najdenie najmensej rezidualnej kapacity na zlepsujucej s-t ceste)
+        //finds the min in minHeap structure O(1)
         public static int ExtractMin(int[] parent, int[,] residualGraph, int sourceIndex, int targetIndex)
         {
             MinHeap minHeap = new MinHeap(parent.Length);
@@ -89,13 +86,13 @@ namespace MaxFlow
             return minHeap.Pop();
         }
 
-        //pokial existuje zlepsujuca cesta, najde ju a zlepsi ju o epsilon, nasledne prirata ku maximalnemu toku
+        //if there exists an augmenting path, we raise flow by epsilon
         public int FordFulkersonAlgo(Network network, int[,] graph)
         {
             int u, v;
 
-            //vytvorime rezidualny graf
-            //r(e) = c(e) - f(e), kedze je tok 0, tak je to povodny graf
+            //we make residual graph
+            //r(e) = c(e) - f(e), if the flow is 0, then the residual graph equals the original graph
             int[,] residualGraph = new int[graph.Length, graph.Length];
             for(u = 0; u < network.NodeCount(); u++)
             {
@@ -105,23 +102,21 @@ namespace MaxFlow
                 }
             }
 
-            //pole sa naplni BFSkom a bude ukladat cestu
+            //bfs fill the array
             int[] parent = new int[network.NodeCount()];
 
-            //velkost maximalneho toku
             int maxFlow = 0;
             
             int sourceIndex = AssignSourceIndex(network);
             int targetIndex = AssignTargetIndex(network);
-
-            //pokial budu existovat zlepsovacie cesty
+            
+            //if there exists an augmenting path
             while(BFS(network, residualGraph, parent))
             {
-                //najdenie najmensej rezidualnej kapacity na ceste, na s-t ceste, ktoru sme dostali z BFS
-                //binarna min halda
+                //we find the smallest residual capacity on the source-target path, which we have obtained from the BFS
                 int pathFlow = ExtractMin(parent, residualGraph, sourceIndex, targetIndex);
 
-                //update toku na ceste a reverse hran
+                //update the flow and the backflow
                 for (v = targetIndex; v != sourceIndex; v = parent[v])
                 {
                     u = parent[v];
@@ -129,7 +124,7 @@ namespace MaxFlow
                     residualGraph[v, u] += pathFlow;
                 }
                 
-                //pridanie toku do maximalneho toku
+                //we add the flow to maxFlow
                 maxFlow += pathFlow;
             }
 

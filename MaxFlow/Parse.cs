@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace MaxFlow
 {
-    //trieda sluziaca na metody, ktore osetruju zadane vsupy podla nejakej podmienky
     class Parse
     {
         private void DisplayInvalidInput()
